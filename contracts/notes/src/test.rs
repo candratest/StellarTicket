@@ -27,7 +27,7 @@ fn setup() -> Fixture {
         ledger.timestamp = 1_000;
     });
 
-    let contract_id = env.register_contract(None, StellarTicket);
+    let contract_id = env.register(StellarTicket, ());
 
     let admin = Address::generate(&env);
     let organizer = Address::generate(&env);
@@ -110,20 +110,18 @@ fn user_buy_ticket_succeeds() {
 }
 
 #[test]
+#[should_panic(expected = "ContractError(12)")]
 fn user_cannot_buy_two_tickets_for_same_event() {
     let fixture = setup();
     let client = fixture.client();
     let event_id = create_sample_event(&fixture.env, &client, &fixture.organizer);
 
     client.buy_ticket(&event_id, &symbol(&fixture.env, "ticket_1"), &fixture.user);
-
-    assert_eq!(
-        client.try_buy_ticket(&event_id, &symbol(&fixture.env, "ticket_2"), &fixture.user),
-        Err(Ok(Error::UserAlreadyHasTicket))
-    );
+    client.buy_ticket(&event_id, &symbol(&fixture.env, "ticket_2"), &fixture.user);
 }
 
 #[test]
+#[should_panic(expected = "ContractError(11)")]
 fn cannot_buy_ticket_when_sold_out() {
     let fixture = setup();
     let client = fixture.client();
@@ -133,11 +131,7 @@ fn cannot_buy_ticket_when_sold_out() {
 
     client.buy_ticket(&event_id, &symbol(&fixture.env, "ticket_1"), &fixture.user);
     client.buy_ticket(&event_id, &symbol(&fixture.env, "ticket_2"), &user_2);
-
-    assert_eq!(
-        client.try_buy_ticket(&event_id, &symbol(&fixture.env, "ticket_3"), &user_3),
-        Err(Ok(Error::SoldOut))
-    );
+    client.buy_ticket(&event_id, &symbol(&fixture.env, "ticket_3"), &user_3);
 }
 
 #[test]
@@ -182,6 +176,7 @@ fn verify_ticket_false_after_used() {
 }
 
 #[test]
+#[should_panic(expected = "ContractError(15)")]
 fn non_organizer_cannot_use_ticket() {
     let fixture = setup();
     let client = fixture.client();
@@ -191,11 +186,7 @@ fn non_organizer_cannot_use_ticket() {
     let stranger = Address::generate(&fixture.env);
 
     client.buy_ticket(&event_id, &ticket_id, &fixture.user);
-
-    assert_eq!(
-        client.try_use_ticket(&ticket_id, &stranger),
-        Err(Ok(Error::Unauthorized))
-    );
+    client.use_ticket(&ticket_id, &stranger);
 }
 
 #[test]
@@ -214,6 +205,7 @@ fn transfer_ticket_succeeds() {
 }
 
 #[test]
+#[should_panic(expected = "ContractError(14)")]
 fn used_ticket_cannot_be_transferred() {
     let fixture = setup();
     let client = fixture.client();
@@ -224,11 +216,7 @@ fn used_ticket_cannot_be_transferred() {
 
     client.buy_ticket(&event_id, &ticket_id, &fixture.user);
     client.use_ticket(&ticket_id, &fixture.organizer);
-
-    assert_eq!(
-        client.try_transfer_ticket(&ticket_id, &fixture.user, &receiver),
-        Err(Ok(Error::TicketAlreadyUsed))
-    );
+    client.transfer_ticket(&ticket_id, &fixture.user, &receiver);
 }
 
 #[test]

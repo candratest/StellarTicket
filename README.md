@@ -71,3 +71,5 @@ cargo test
 The tests cover admin initialization, event creation, ticket purchase rules,
 sold-out events, verification before and after use, check-in authorization,
 ticket transfers, transfer restrictions for used tickets, and event cancelation.
+
+$CONTRACT_ID = "CCCZP4HWOKEZYHF74MYFQJWSPZK7UBKLW5KLGG7KRYJWRKPRTY5EGUZJ"
