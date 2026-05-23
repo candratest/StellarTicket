@@ -72,4 +72,4 @@ The tests cover admin initialization, event creation, ticket purchase rules,
 sold-out events, verification before and after use, check-in authorization,
 ticket transfers, transfer restrictions for used tickets, and event cancelation.
 
-$CONTRACT_ID = "CCCZP4HWOKEZYHF74MYFQJWSPZK7UBKLW5KLGG7KRYJWRKPRTY5EGUZJ"
+$CONTRACT_ID = "CDFERTSAT2YDTD56WUZQEODL5YDBTJFHO2ZXMUY5OE3GS3RPCQIBYK74"
