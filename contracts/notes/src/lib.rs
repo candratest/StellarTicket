@@ -1,6 +1,9 @@
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, Env, String, Symbol};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, panic_with_error, Address, Env, String,
+    Symbol,
+};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -67,7 +70,7 @@ impl StellarTicket {
         admin.require_auth();
 
         if env.storage().persistent().has(&DataKey::Admin) {
-            panic_with_error(&env, Error::AlreadyInitialized);
+            panic_with_error!(&env, Error::AlreadyInitialized);
         }
 
         env.storage().persistent().set(&DataKey::Admin, &admin);
@@ -89,19 +92,19 @@ impl StellarTicket {
 
         let event_key = DataKey::Event(event_id.clone());
         if env.storage().persistent().has(&event_key) {
-            panic_with_error(&env, Error::EventAlreadyExists);
+            panic_with_error!(&env, Error::EventAlreadyExists);
         }
 
         if event_date <= env.ledger().timestamp() {
-            panic_with_error(&env, Error::EventDateMustBeFuture);
+            panic_with_error!(&env, Error::EventDateMustBeFuture);
         }
 
         if max_tickets == 0 {
-            panic_with_error(&env, Error::MaxTicketsMustBePositive);
+            panic_with_error!(&env, Error::MaxTicketsMustBePositive);
         }
 
         if ticket_price < 0 {
-            panic_with_error(&env, Error::TicketPriceMustBeNonNegative);
+            panic_with_error!(&env, Error::TicketPriceMustBeNonNegative);
         }
 
         let event = Event {
@@ -126,21 +129,21 @@ impl StellarTicket {
         let mut event = get_event_or_panic(&env, &event_key);
 
         if !event.active {
-            panic_with_error(&env, Error::EventInactive);
+            panic_with_error!(&env, Error::EventInactive);
         }
 
         if event.sold_tickets >= event.max_tickets {
-            panic_with_error(&env, Error::SoldOut);
+            panic_with_error!(&env, Error::SoldOut);
         }
 
         let ticket_key = DataKey::Ticket(ticket_id.clone());
         if env.storage().persistent().has(&ticket_key) {
-            panic_with_error(&env, Error::TicketAlreadyExists);
+            panic_with_error!(&env, Error::TicketAlreadyExists);
         }
 
         let user_ticket_key = DataKey::UserTicket(buyer.clone(), event_id.clone());
         if env.storage().persistent().has(&user_ticket_key) {
-            panic_with_error(&env, Error::UserAlreadyHasTicket);
+            panic_with_error!(&env, Error::UserAlreadyHasTicket);
         }
 
         let ticket = Ticket {
@@ -198,16 +201,16 @@ impl StellarTicket {
         let mut ticket = get_ticket_or_panic(&env, &ticket_key);
 
         if !ticket.valid {
-            panic_with_error(&env, Error::TicketInvalid);
+            panic_with_error!(&env, Error::TicketInvalid);
         }
 
         if ticket.used {
-            panic_with_error(&env, Error::TicketAlreadyUsed);
+            panic_with_error!(&env, Error::TicketAlreadyUsed);
         }
 
         let event = get_event_or_panic(&env, &DataKey::Event(ticket.event_id.clone()));
         if !event.active {
-            panic_with_error(&env, Error::EventInactive);
+            panic_with_error!(&env, Error::EventInactive);
         }
 
         require_organizer_or_admin(&env, &checker, &event.organizer);
@@ -223,22 +226,22 @@ impl StellarTicket {
         let mut ticket = get_ticket_or_panic(&env, &ticket_key);
 
         if ticket.owner != from {
-            panic_with_error(&env, Error::NotTicketOwner);
+            panic_with_error!(&env, Error::NotTicketOwner);
         }
 
         if ticket.used {
-            panic_with_error(&env, Error::TicketAlreadyUsed);
+            panic_with_error!(&env, Error::TicketAlreadyUsed);
         }
 
         if !ticket.valid {
-            panic_with_error(&env, Error::TicketInvalid);
+            panic_with_error!(&env, Error::TicketInvalid);
         }
 
         let from_ticket_key = DataKey::UserTicket(from.clone(), ticket.event_id.clone());
         let to_ticket_key = DataKey::UserTicket(to.clone(), ticket.event_id.clone());
 
         if env.storage().persistent().has(&to_ticket_key) {
-            panic_with_error(&env, Error::UserAlreadyHasTicket);
+            panic_with_error!(&env, Error::UserAlreadyHasTicket);
         }
 
         ticket.owner = to;
@@ -265,14 +268,14 @@ fn get_event_or_panic(env: &Env, event_key: &DataKey) -> Event {
     env.storage()
         .persistent()
         .get(event_key)
-        .unwrap_or_else(|| panic_with_error(env, Error::EventNotFound))
+        .unwrap_or_else(|| panic_with_error!(env, Error::EventNotFound))
 }
 
 fn get_ticket_or_panic(env: &Env, ticket_key: &DataKey) -> Ticket {
     env.storage()
         .persistent()
         .get(ticket_key)
-        .unwrap_or_else(|| panic_with_error(env, Error::TicketNotFound))
+        .unwrap_or_else(|| panic_with_error!(env, Error::TicketNotFound))
 }
 
 fn require_organizer_or_admin(env: &Env, caller: &Address, organizer: &Address) {
@@ -284,16 +287,11 @@ fn require_organizer_or_admin(env: &Env, caller: &Address, organizer: &Address) 
         .storage()
         .persistent()
         .get::<_, Address>(&DataKey::Admin)
-        .unwrap_or_else(|| panic_with_error(env, Error::NotInitialized));
+        .unwrap_or_else(|| panic_with_error!(env, Error::NotInitialized));
 
     if caller != &admin {
-        panic_with_error(env, Error::Unauthorized);
+        panic_with_error!(env, Error::Unauthorized);
     }
-}
-
-fn panic_with_error(env: &Env, error: Error) -> ! {
-    let _ = env;
-    panic!("{:?}", error);
 }
 
 #[cfg(test)]
